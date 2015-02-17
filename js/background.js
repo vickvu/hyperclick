@@ -2,7 +2,7 @@
 
   "use strict" ;
 
-  var regex = /\{([a-z0-9_\-,&?]+)\}/ig;
+  var regex = /\{([a-z0-9_\-,&?\/]+)\}/ig;
 
   var parseUrl = function(url) {
     var urlComps = [];
@@ -15,7 +15,7 @@
       var paramName = result[1];
       var firstChar = paramName.charAt(0);
       urlCompIndex += 2;
-      if (firstChar === '&' || firstChar === '?') {
+      if (firstChar === '&' || firstChar === '?' || firstChar === '/') {
         urlComp = url.substring(lastIndex, result.index);
         var paramNames = paramName.substr(1).split(',');
         for (var paramNameIndex in paramNames) {
@@ -61,10 +61,14 @@
           var optional = urlInfo.params[paramName].optional;
           if (optional) {
             var prefix = urlInfo.params[paramName].prefix;
-            if (retVal[index] === '') {
-              retVal[index] = prefix + paramName + '=' + value;
-            } else {
-              retVal[index] += '&' + paramName + '=' + value;
+            if (prefix === '&' || prefix === '?') {
+              if (retVal[index] === '') {
+                retVal[index] = prefix + paramName + '=' + value;
+              } else {
+                retVal[index] += '&' + paramName + '=' + value;
+              }
+            } else if (prefix === '/') {
+              retVal[index] += prefix + value;
             }
           } else {
             retVal[index] = value;

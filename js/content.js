@@ -1,7 +1,7 @@
 (function() {
   "use strict";
 
-  var regex = /\{([a-z0-9_\-,&?]+)\}/ig;
+  var regex = /\{([a-z0-9_\-,&?\/]+)\}/ig;
   $.facebox.settings.closeImage = chrome.extension.getURL('img/closelabel.png');
   $.facebox.settings.loadingImage = chrome.extension.getURL('img/loading.gif');
 
