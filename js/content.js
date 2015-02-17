@@ -9,6 +9,81 @@
     return url.search(regex) >= 0;
   }
 
+  var parseUrl = function(url) {
+    var urlComps = [];
+    var urlCompIndex = -1;
+    var params = {};
+    var lastIndex = 0;
+    var result;
+    while ((result = regex.exec(url)) !== null) {
+      var urlComp = '';
+      var paramName = result[1];
+      var firstChar = paramName.charAt(0);
+      urlCompIndex += 2;
+      if (firstChar === '&' || firstChar === '?' || firstChar === '/') {
+        urlComp = url.substring(lastIndex, result.index);
+        var paramNames = paramName.substr(1).split(',');
+        for (var paramNameIndex in paramNames) {
+          params[paramNames[paramNameIndex]] = {
+            value: null,
+            optional: true,
+            index: urlCompIndex,
+            prefix: firstChar
+          };
+        }
+      } else {
+        urlComp = url.substring(lastIndex, result.index);
+        params[paramName] = {
+          value: '',
+          optional: false,
+          index: urlCompIndex
+        };
+      }
+      urlComps.push(urlComp);
+      urlComps.push('');
+      lastIndex = regex.lastIndex;
+    }
+    if (lastIndex > 0) {
+      urlComps.push(url.substring(lastIndex));
+    }
+    return {
+      comps: urlComps,
+      params: params
+    }
+  };
+
+  var createUrl = function(urlInfo) {
+    //Reconstruct the URL
+    var retVal = [];
+    for (var i = 0; i < urlInfo.comps.length; i++) {
+      retVal.push(urlInfo.comps[i]);
+    }
+    for (var paramName in urlInfo.params) {
+      if (urlInfo.params.hasOwnProperty(paramName)) {
+        var index = urlInfo.params[paramName].index;
+        if (urlInfo.params[paramName].value !== null) {
+          var value = encodeURIComponent(urlInfo.params[paramName].value);
+          var optional = urlInfo.params[paramName].optional;
+          if (optional) {
+            var prefix = urlInfo.params[paramName].prefix;
+            if (prefix === '&' || prefix === '?') {
+              if (retVal[index] === '') {
+                retVal[index] = prefix + paramName + '=' + value;
+              } else {
+                retVal[index] += '&' + paramName + '=' + value;
+              }
+            } else if (prefix === '/') {
+              retVal[index] += prefix + value;
+            }
+          } else {
+            retVal[index] = value;
+          }
+        }
+      }
+    }
+    return retVal.join('');
+  };
+
   var toggleValue = function(checkbox, input, param) {
     if (checkbox.is(':checked')) {
       input.removeAttr('disabled');
@@ -32,7 +107,11 @@
         }
       }
     });
-    chrome.runtime.sendMessage({type: 'navigate', target: targetInput.val(), urlInfo: urlInfo, baseProtocol: window.location.protocol}, function(response) {
+    var url = createUrl(urlInfo);
+    if (url.indexOf('//') == 0) {
+      url = window.location.protocol + url;
+    }
+    chrome.runtime.sendMessage({type: 'navigate', target: targetInput.val(), url: url}, function(response) {
       $(document).trigger('close.facebox')
     });
     event.preventDefault();
@@ -119,13 +198,10 @@
     if (isTemplate(url)) {
       var urlInfo = $this.data('hyperclick-url-info');
       if (!urlInfo) {
-        chrome.runtime.sendMessage({type: 'parse', url: url}, function(urlInfo) {
-          $this.data('hyperclick-url-info', urlInfo);
-          createForm(urlInfo);
-        });
-      } else {
-        createForm(urlInfo);
+        urlInfo = parseUrl(url);
+        $this.data('hyperclick-url-info', urlInfo);
       }
+      createForm(urlInfo);
       event.preventDefault();
     }
   };
