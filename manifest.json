@@ -1,6 +1,6 @@
 {
   "name": "Hyperclick",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "manifest_version": 2,
   "description": "Make template url in JSON clickable. Support JSON Formatter, JSONView and JSON Viewer",
   "homepage_url": "https://github.com/vickvu/hyperclick",
