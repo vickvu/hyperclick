@@ -190,6 +190,7 @@
     open.on('click', submitValues.bind(null, form, urlInfo, select));
     control.append(open);
     $.facebox(form);
+    form.find('input[type=text]').first().focus();
   }
 
   var linkOnClick = function(event) {
